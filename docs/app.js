@@ -8,7 +8,7 @@
   const CHAVE_URL = "pm_api_url";
   const CHAVE_KEY = "pm_api_key";
   const MAX_ARQUIVOS = 5;
-  const URL_PADRAO = "https://smtlab.duckdns.org/prompts"; // Pré-configurada; mude conforme necessário
+  const URL_PADRAO = "https://smlapi.duckdns.org/prompts"; // Pré-configurada; mude conforme necessário
 
   const $ = (sel) => document.querySelector(sel);
   const apiUrl = () => localStorage.getItem(CHAVE_URL) || "";
