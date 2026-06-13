@@ -31,6 +31,9 @@
 
   <footer class="acoes">
     <button type="button" class="btn btn-copiar">📋 Copiar</button>
+    <button type="button" class="btn btn-exportar-json"
+            data-id="{{ p.id }}"
+            title="Copia o JSON completo (prompt + anexos) para a área de transferência">📦 Exportar JSON</button>
     <button type="button" class="btn btn-editar"
             hx-get="/ui/prompts/{{ p.id }}/editar{{ qs_filtro }}"
             hx-target="closest article"

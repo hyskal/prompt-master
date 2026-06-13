@@ -182,11 +182,47 @@
     }
   });
 
+  async function exportarJson(botao) {
+    const id = botao.dataset.id;
+    botao.disabled = true;
+    try {
+      const resp = await fetch(apiUrl() + "/api/prompts/" + id + "/export", {
+        headers: cabecalhos(),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (resp.status === 401) { mostrarConexao("Chave de API inválida ou ausente."); return; }
+      if (!resp.ok) { toast("Erro " + resp.status + " ao exportar."); return; }
+      const texto = await resp.text();
+      try {
+        await navigator.clipboard.writeText(texto);
+        const original = botao.textContent;
+        botao.textContent = "✅ Copiado!";
+        setTimeout(() => { botao.textContent = original; }, 1800);
+      } catch (_) {
+        const blob = new Blob([texto], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "prompt-" + id + ".json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+        toast("JSON baixado (clipboard indisponível).");
+      }
+    } catch (e) {
+      toast("Não foi possível exportar o prompt.");
+    } finally {
+      botao.disabled = false;
+    }
+  }
+
   /* ---------- Delegação de eventos (sobrevive aos swaps do HTMX) ---------- */
 
   document.addEventListener("click", (e) => {
     const copiar = e.target.closest(".btn-copiar");
     if (copiar) { copiarPrompt(copiar); return; }
+    const exportar = e.target.closest(".btn-exportar-json");
+    if (exportar) { exportarJson(exportar); return; }
     const baixarBtn = e.target.closest(".btn-baixar");
     if (baixarBtn) baixar(baixarBtn.dataset.url, baixarBtn.dataset.nome);
   });

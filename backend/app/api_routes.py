@@ -61,6 +61,21 @@ def importar(
     return processar_import(conn, arquivo, modo)
 
 
+@router.get("/prompts/{prompt_id}/export")
+def exportar_um(prompt_id: int, conn=Depends(get_db)):
+    p = db.obter_prompt(conn, prompt_id)
+    if not p:
+        raise HTTPException(404, "Prompt não encontrado.")
+    p["arquivos"] = db.listar_arquivos_completos(conn, prompt_id)
+    corpo = {"versao": 1, "exportado_em": db.agora_iso(), "total": 1, "prompts": [p]}
+    nome_base = re.sub(r"[^A-Za-z0-9._-]", "_", p["titulo"])[:50] or f"prompt-{prompt_id}"
+    return Response(
+        content=json.dumps(corpo, ensure_ascii=False, indent=2),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{nome_base}.json"'},
+    )
+
+
 @router.get("/prompts/{prompt_id}", response_model=PromptOut)
 def obter(prompt_id: int, conn=Depends(get_db)):
     p = db.obter_prompt(conn, prompt_id)
