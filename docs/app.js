@@ -251,6 +251,31 @@
     baixar("/api/prompts/export", "prompt-master-" + hoje + ".json");
   });
 
+  /* ---------- Tema claro / escuro ---------- */
+
+  function aplicarTema(escuro) {
+    document.body.classList.toggle("theme-dark", escuro);
+    document.body.classList.toggle("theme-light", !escuro);
+    const iconEscuro = $("#icone-tema-escuro");
+    const iconClaro  = $("#icone-tema-claro");
+    if (iconEscuro) iconEscuro.hidden =  escuro;
+    if (iconClaro)  iconClaro.hidden  = !escuro;
+  }
+
+  // Aplica tema salvo (o inline script no <head> já adiciona a classe no <html>
+  // para evitar flash; aqui sincronizamos o ícone e o <body>).
+  const temaSalvo = localStorage.getItem("pm_tema") || "light";
+  aplicarTema(temaSalvo === "dark");
+
+  const btnTema = $("#btn-tema");
+  if (btnTema) {
+    btnTema.addEventListener("click", () => {
+      const escuro = !document.body.classList.contains("theme-dark");
+      aplicarTema(escuro);
+      localStorage.setItem("pm_tema", escuro ? "dark" : "light");
+    });
+  }
+
   if (apiUrl()) {
     conectar(apiUrl(), apiKey()); // reconexão automática
   } else {

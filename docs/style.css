@@ -1,74 +1,162 @@
-/* Prompt Master — tema claro, simples e legível. */
+/* Prompt Master — minimalista, claro/escuro, mobile-first. */
 
 :root {
-  --fundo: #f5f6fa;
-  --painel: #ffffff;
-  --borda: #e2e4ee;
-  --texto: #23263a;
-  --texto-suave: #6b7088;
-  --acento: #4f46e5;
-  --acento-suave: #eef0ff;
-  --perigo: #c0392b;
-  --fixado: #fff7e0;
-  --raio: 10px;
-  --sombra: 0 1px 3px rgba(30, 34, 60, .08);
+  --fundo:        #f4f5f6;
+  --painel:       #ffffff;
+  --bg-input:     #f4f5f6;
+  --borda:        #e2e4eb;
+  --texto:        #1f2937;
+  --texto-suave:  #6b7280;
+  --acento:       #6d28d9;
+  --acento-suave: rgba(109,40,217,.09);
+  --perigo:       #dc2626;
+  --fixado:       #fffbeb;
+  --fixado-borda: #fde68a;
+  --raio:         10px;
+  --sombra:       0 1px 4px rgba(0,0,0,.07);
+  --tag-fundo:    #dcfce7;
+  --tag-texto:    #166534;
 }
 
-* { box-sizing: border-box; }
+.theme-dark {
+  --fundo:        #0b0f17;
+  --painel:       #161b26;
+  --bg-input:     #0d1120;
+  --borda:        #242b3d;
+  --texto:        #f3f4f6;
+  --texto-suave:  #9ca3af;
+  --acento:       #a78bfa;
+  --acento-suave: rgba(167,139,250,.12);
+  --perigo:       #f87171;
+  --fixado:       #1c1500;
+  --fixado-borda: #3d3000;
+  --sombra:       0 4px 20px rgba(0,0,0,.35);
+  --tag-fundo:    #064e3b;
+  --tag-texto:    #6ee7b7;
+}
+
+/* Transição suave na troca de tema */
+*, *::before, *::after { box-sizing: border-box; }
+body, .card, .painel, .topo, input, textarea, select, button {
+  transition: background-color .2s, border-color .2s, color .15s, box-shadow .2s;
+}
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Geist Sans', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--fundo);
   color: var(--texto);
   line-height: 1.5;
+  overflow-x: hidden;
 }
 
-h1 { font-size: 1.4rem; margin: 0; }
-h2 { font-size: 1.05rem; margin: 1.4rem 0 .6rem; color: var(--texto-suave); }
-h3 { font-size: 1rem; margin: 0; word-break: break-word; }
+h1 { font-size: 1.15rem; margin: 0; font-weight: 600; letter-spacing: -.01em; }
+h2 { font-size: .78rem; margin: 1.5rem 0 .6rem; color: var(--texto-suave);
+     font-weight: 600; text-transform: uppercase; letter-spacing: .07em; }
+h3 { font-size: .95rem; margin: 0; word-break: break-word; font-weight: 500; }
+code { background: var(--acento-suave); color: var(--acento); padding: 0 .3em; border-radius: 4px; font-size: .9em; }
 
-code { background: var(--acento-suave); padding: 0 .3em; border-radius: 4px; }
-
-/* ---------- Botões e campos ---------- */
+/* ─── Botões de texto ─── */
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
   border: 1px solid var(--borda);
   background: var(--painel);
   color: var(--texto);
   border-radius: 8px;
-  padding: .4rem .8rem;
+  padding: .4rem .85rem;
   font: inherit;
-  font-size: .88rem;
+  font-size: .85rem;
   cursor: pointer;
+  white-space: nowrap;
 }
 .btn:hover { border-color: var(--acento); color: var(--acento); }
-.btn:disabled { opacity: .55; cursor: default; }
+.btn:disabled { opacity: .5; cursor: default; }
 
 .btn-primario {
   background: var(--acento);
   border-color: var(--acento);
   color: #fff;
 }
-.btn-primario:hover { background: #4338ca; color: #fff; }
+.btn-primario:hover { opacity: .88; color: #fff; }
 
-.btn-excluir:hover { border-color: var(--perigo); color: var(--perigo); }
-.btn-fixar.ativo { background: var(--fixado); border-color: #e8c96a; }
+/* ─── Botões ícone (SVG) ─── */
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--texto-suave);
+  cursor: pointer;
+  font: inherit;
+  flex-shrink: 0;
+}
+.btn-icon:hover {
+  color: var(--texto);
+  background: var(--fundo);
+  border-color: var(--borda);
+}
+.btn-icon svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.btn-icon.ativo {
+  color: var(--acento);
+  background: var(--acento-suave);
+  border-color: transparent;
+}
+.btn-icon-perigo:hover { color: var(--perigo) !important; border-color: var(--perigo) !important; }
+
+/* ─── Toggle de tema ─── */
+
+.btn-tema {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--painel);
+  color: var(--texto-suave);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.btn-tema:hover { color: var(--texto); }
+.btn-tema svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ─── Campos ─── */
 
 input[type="text"], input[type="password"], input[name], textarea {
   width: 100%;
-  padding: .5rem .6rem;
+  padding: .5rem .7rem;
   border: 1px solid var(--borda);
   border-radius: 8px;
   font: inherit;
-  background: #fff;
+  font-size: .9rem;
+  background: var(--bg-input);
+  color: var(--texto);
 }
 textarea { resize: vertical; min-height: 7rem; }
 input:focus, textarea:focus { outline: 2px solid var(--acento-suave); border-color: var(--acento); }
 
 label {
   display: block;
-  font-size: .85rem;
+  font-size: .82rem;
   color: var(--texto-suave);
   margin-bottom: .7rem;
 }
@@ -76,21 +164,22 @@ label small { font-weight: normal; }
 label.radio { display: inline-flex; gap: .35rem; align-items: center; margin-right: 1rem; }
 label.radio input { width: auto; }
 
-/* ---------- Tela de conexão ---------- */
+/* ─── Tela de conexão ─── */
 
 .tela-conexao {
-  max-width: 30rem;
+  max-width: 28rem;
   margin: 8vh auto;
-  padding: 0 1rem;
+  padding: 0 1.2rem;
   text-align: center;
 }
 .tela-conexao .painel { text-align: left; margin-top: 1.2rem; }
-.tela-conexao .btn-primario { width: 100%; margin-top: .3rem; }
-.subtitulo { color: var(--texto-suave); }
-.dica { font-size: .8rem; color: var(--texto-suave); margin-top: 1rem; }
-.erro { color: var(--perigo); font-size: .88rem; margin: .6rem 0 0; }
+.tela-conexao .btn-primario { width: 100%; margin-top: .3rem; justify-content: center; }
+.subtitulo { color: var(--texto-suave); font-size: .95rem; margin-top: .5rem; }
+.dica { font-size: .78rem; color: var(--texto-suave); margin-top: 1rem; }
+.dica code { font-size: .78rem; }
+.erro { color: var(--perigo); font-size: .85rem; margin: .6rem 0 0; }
 
-/* ---------- Topo e painéis ---------- */
+/* ─── Topo sticky ─── */
 
 .topo {
   display: flex;
@@ -98,27 +187,29 @@ label.radio input { width: auto; }
   gap: .6rem;
   align-items: center;
   justify-content: space-between;
-  padding: .8rem 1.2rem;
+  padding: .7rem 1.2rem;
   background: var(--painel);
   border-bottom: 1px solid var(--borda);
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 10;
 }
-.topo-acoes { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.topo-acoes { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
 .status-api {
-  font-size: .8rem;
+  font-size: .78rem;
   color: var(--texto-suave);
-  max-width: 18rem;
+  max-width: 16rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* ─── Painéis colapsáveis ─── */
+
 .paineis {
   display: flex;
   flex-direction: column;
-  gap: .6rem;
+  gap: .5rem;
   max-width: 64rem;
   margin: 1rem auto 0;
   padding: 0 1rem;
@@ -128,124 +219,127 @@ label.radio input { width: auto; }
   border: 1px solid var(--borda);
   border-radius: var(--raio);
   box-shadow: var(--sombra);
-  padding: .8rem 1rem;
+  padding: .85rem 1rem;
 }
 .painel summary {
   cursor: pointer;
   font-weight: 600;
-  font-size: .95rem;
+  font-size: .9rem;
+  user-select: none;
+  list-style: none;
 }
+.painel summary::-webkit-details-marker { display: none; }
 .painel form { margin-top: .9rem; }
 .linha {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: .8rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: .75rem;
 }
-
-.htmx-indicator { display: none; font-size: .85rem; color: var(--texto-suave); margin-left: .5rem; }
+.htmx-indicator { display: none; font-size: .82rem; color: var(--texto-suave); margin-left: .5rem; }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline; }
 
-/* ---------- Lista, chips e cards ---------- */
+/* ─── Lista, chips e grid de cards ─── */
 
 .lista {
   max-width: 64rem;
-  margin: 0 auto 4rem;
+  margin: 0 auto 5rem;
   padding: 0 1rem;
 }
 
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: .4rem;
+  gap: .35rem;
   margin: 1rem 0;
 }
 .chip {
   border: 1px solid var(--borda);
   background: var(--painel);
   border-radius: 999px;
-  padding: .25rem .8rem;
+  padding: .25rem .85rem;
   font: inherit;
-  font-size: .82rem;
+  font-size: .8rem;
   cursor: pointer;
   color: var(--texto-suave);
 }
 .chip:hover { border-color: var(--acento); color: var(--acento); }
-.chip.ativo {
-  background: var(--acento);
-  border-color: var(--acento);
-  color: #fff;
-}
+.chip.ativo { background: var(--acento); border-color: var(--acento); color: #fff; }
 
-.vazio {
-  text-align: center;
-  color: var(--texto-suave);
-  padding: 2.5rem 0;
-}
-
-.grupo-fixados h2 { color: #a07d1c; }
+.vazio { text-align: center; color: var(--texto-suave); padding: 3rem 0; font-size: .95rem; }
+.grupo-fixados h2 { color: #92661a; }
+.theme-dark .grupo-fixados h2 { color: #d4a017; }
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
-  gap: .8rem;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: 1rem;
 }
+
+/* ─── Card ─── */
 
 .card {
   background: var(--painel);
   border: 1px solid var(--borda);
   border-radius: var(--raio);
   box-shadow: var(--sombra);
-  padding: .9rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: .6rem;
+  gap: .65rem;
 }
-.card-fixado { background: var(--fixado); border-color: #ecd9a0; }
+.card:hover { border-color: var(--texto-suave); }
+.card-fixado { background: var(--fixado); border-color: var(--fixado-borda); }
+.card-fixado:hover { border-color: #d4a017; }
 
 .card-topo {
   display: flex;
   gap: .5rem;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
 }
 .badge {
-  background: var(--acento-suave);
-  color: var(--acento);
-  border-radius: 999px;
-  padding: .1rem .6rem;
-  font-size: .75rem;
+  background: var(--fundo);
+  color: var(--texto-suave);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  padding: .1rem .55rem;
+  font-size: .72rem;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .texto {
   margin: 0;
   font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
-  font-size: .82rem;
-  white-space: pre-wrap;       /* preserva quebras e quebra linhas longas */
+  font-size: .8rem;
+  white-space: pre-wrap;
   word-break: break-word;
-  background: #fafbff;
+  background: var(--bg-input);
   border: 1px solid var(--borda);
   border-radius: 8px;
-  padding: .6rem;
-  max-height: 11rem;
+  padding: .65rem;
+  max-height: 10rem;
   overflow-y: auto;
+  color: var(--texto);
 }
 
 .meta {
   display: flex;
   flex-wrap: wrap;
-  gap: .4rem;
+  gap: .35rem;
   align-items: center;
-  font-size: .78rem;
+  font-size: .75rem;
   color: var(--texto-suave);
 }
 .tag {
-  background: #eef7ee;
-  color: #2e7d32;
+  background: var(--tag-fundo);
+  color: var(--tag-texto);
   border-radius: 999px;
-  padding: .05rem .55rem;
+  padding: .05rem .5rem;
 }
 .meta time { margin-left: auto; }
+
+/* ─── Anexos no card ─── */
 
 .anexos {
   list-style: none;
@@ -253,16 +347,16 @@ label.radio input { width: auto; }
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: .25rem;
-  font-size: .82rem;
+  gap: .2rem;
+  font-size: .8rem;
 }
-.anexos li { display: flex; align-items: center; gap: .3rem; }
+.anexos li { display: flex; align-items: center; gap: .25rem; }
 .btn-baixar {
   border: none;
   background: none;
   color: var(--acento);
   font: inherit;
-  font-size: .82rem;
+  font-size: .8rem;
   cursor: pointer;
   padding: 0;
   text-align: left;
@@ -275,55 +369,51 @@ label.radio input { width: auto; }
   color: var(--texto-suave);
   font-size: 1rem;
   cursor: pointer;
-  padding: 0 .25rem;
+  padding: 0 .2rem;
   line-height: 1;
+  flex-shrink: 0;
 }
 .btn-x:hover { color: var(--perigo); }
 
-.acoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .4rem;
-  margin-top: auto;
-}
-.form-anexar { display: inline; }
-.btn-anexar { display: inline-block; margin-bottom: 0; color: var(--texto); }
+/* ─── Ações do card (ícones) ─── */
 
-/* ---------- Toast ---------- */
+.acoes { margin-top: auto; border-top: 1px solid var(--borda); padding-top: .65rem; }
+.acoes-linha { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
+.form-anexar { display: contents; }
+.btn-anexar { cursor: pointer; }
+
+/* ─── Edição inline ─── */
+
+.card-editando { grid-column: 1 / -1; }
+.card-editando form { display: flex; flex-direction: column; gap: .9rem; }
+.campo-editar { display: flex; flex-direction: column; gap: .25rem; }
+.campo-editar label { margin-bottom: 0; font-weight: 600; font-size: .8rem; }
+
+/* ─── Toast ─── */
 
 #toast {
   position: fixed;
   bottom: 1.2rem;
   left: 50%;
   transform: translateX(-50%);
-  background: #23263a;
-  color: #fff;
+  background: var(--texto);
+  color: var(--fundo);
   padding: .6rem 1.1rem;
   border-radius: 8px;
-  font-size: .88rem;
+  font-size: .85rem;
   z-index: 50;
   max-width: min(90vw, 34rem);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  white-space: nowrap;
 }
 
-/* ---------- Card de edição inline ---------- */
+/* ─── Mobile ─── */
 
-.card-editando { grid-column: 1 / -1; }
-
-.card-editando form {
-  display: flex;
-  flex-direction: column;
-  gap: .9rem;
-}
-
-.campo-editar {
-  display: flex;
-  flex-direction: column;
-  gap: .25rem;
-}
-
-.campo-editar label {
-  margin-bottom: 0;
-  font-weight: 600;
-  font-size: .82rem;
+@media (max-width: 600px) {
+  .topo { padding: .6rem .9rem; }
+  .status-api { display: none; }
+  .paineis, .lista { padding: 0 .75rem; }
+  .cards { grid-template-columns: 1fr; }
+  .linha { grid-template-columns: 1fr; }
+  .tela-conexao { margin: 5vh auto; }
 }
