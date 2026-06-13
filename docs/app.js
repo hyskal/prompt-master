@@ -126,17 +126,37 @@
     }
   }
 
-  function copiarPrompt(botao) {
-    const texto = botao.closest(".card").querySelector(".texto").textContent;
-    navigator.clipboard.writeText(texto).then(() => {
-      const original = botao.textContent;
-      botao.textContent = "✅ Copiado!";
+  async function copiarPrompt(botao) {
+    const card = botao.closest(".card");
+    const texto = card.querySelector(".texto").textContent;
+    const temAnexos = !!card.querySelector(".anexos li");
+    let conteudo = texto;
+
+    if (temAnexos && botao.dataset.id) {
       botao.disabled = true;
-      setTimeout(() => {
-        botao.textContent = original;
-        botao.disabled = false;
-      }, 1500);
-    }).catch(() => toast("Não foi possível copiar para a área de transferência."));
+      try {
+        const resp = await fetch(apiUrl() + "/api/prompts/" + botao.dataset.id + "/export", {
+          headers: cabecalhos(),
+          signal: AbortSignal.timeout(8000),
+        });
+        if (resp.ok) {
+          const dados = await resp.json();
+          const p = dados.prompts && dados.prompts[0];
+          if (p && p.arquivos && p.arquivos.length) {
+            const partes = [texto];
+            for (const a of p.arquivos) {
+              partes.push("\n--- " + a.nome + " ---\n" + a.conteudo);
+            }
+            conteudo = partes.join("\n");
+          }
+        }
+      } catch (_) { /* fallback: só o texto */ }
+    }
+
+    navigator.clipboard.writeText(conteudo)
+      .then(() => toast(temAnexos ? "Copiado com anexos!" : "Copiado!"))
+      .catch(() => toast("Não foi possível copiar para a área de transferência."))
+      .finally(() => { botao.disabled = false; });
   }
 
   /* ---------- HTMX: requests cross-origin para a API conectada ---------- */
