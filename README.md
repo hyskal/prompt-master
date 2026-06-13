@@ -1,6 +1,6 @@
 # ⚡ Prompt Master
 
-Portal de prompts para IA: organize por **categoria**, **copie com um clique**, **fixe** os favoritos, anexe **até 5 arquivos** por prompt e faça backup com **export/import em JSON**.
+Portal de prompts para IA: organize por **categoria**, **copie com um clique**, **edite inline**, **fixe** os favoritos, anexe **até 5 arquivos** por prompt, exporte prompts individuais como **JSON pronto para IA** e faça backup com **export/import em lote**.
 
 - **Frontend**: página estática em [HTMX](https://htmx.org) (pasta [`docs/`](docs/)), publicada no **GitHub Pages**.
 - **Backend**: API em [FastAPI](https://fastapi.tiangolo.com) (pasta [`backend/`](backend/)) com SQLite.
@@ -224,6 +224,38 @@ No **Render**/**Railway**: crie um serviço web usando o `backend/Dockerfile` (c
 
 ---
 
+## Funcionalidades do portal
+
+| Botão | Ação |
+|---|---|
+| 📋 **Copiar** | Copia o texto do prompt para o clipboard. |
+| 📦 **Exportar JSON** | Copia o JSON completo (prompt + conteúdo dos anexos) para o clipboard, pronto para colar em uma IA. Fallback automático para download se o clipboard for negado. |
+| ✏️ **Editar** | Abre formulário inline para editar título, categoria, tags e texto. |
+| 📌 **Fixar** | Mantém o prompt no topo da lista. |
+| 📎 **Anexar** | Adiciona arquivos ao prompt (até 5). |
+| 🗑 **Excluir** | Remove o prompt e seus anexos. |
+| ⬇ **Baixar JSON** *(cabeçalho)* | Exporta todos os prompts em lote. |
+| ⬆ **Importar JSON** | Importa prompts de um arquivo JSON. |
+
+### Exportar JSON para IA
+
+O botão **📦 Exportar JSON** gera um JSON que inclui um campo `_instrucao` no topo, orientando qualquer IA a executar o prompt ao receber o conteúdo:
+
+```json
+{
+  "_instrucao": "Você recebeu um prompt exportado do Prompt Master. Execute o campo 'prompt' como instrução principal. Se houver itens em 'arquivos', o campo 'conteudo' de cada um é contexto adicional...",
+  "prompts": [
+    {
+      "titulo": "Nome do prompt",
+      "prompt": "Instrução principal...",
+      "arquivos": [{ "nome": "contexto.md", "conteudo": "..." }]
+    }
+  ]
+}
+```
+
+---
+
 ## A API
 
 | Método | Rota | Descrição |
@@ -232,12 +264,14 @@ No **Render**/**Railway**: crie um serviço web usando o `backend/Dockerfile` (c
 | `GET` | `/api/prompts?categoria=` | Lista (fixados primeiro, mais recentes depois). |
 | `POST` | `/api/prompts` | Cria prompt. |
 | `GET` | `/api/prompts/{id}` | Detalhe. |
+| `PATCH` | `/api/prompts/{id}` | Atualiza título, texto, categoria e tags. |
 | `DELETE` | `/api/prompts/{id}` | Exclui (remove anexos em cascata). |
 | `PATCH` | `/api/prompts/{id}/fixar` | Alterna fixado. |
+| `GET` | `/api/prompts/{id}/export` | Exporta prompt individual com anexos e instrução para IA. |
 | `POST` | `/api/prompts/{id}/arquivos` | Anexa arquivos (multipart, campo `arquivos`). |
 | `GET` | `/api/prompts/{id}/arquivos/{arq}` | Baixa anexo. |
 | `DELETE` | `/api/prompts/{id}/arquivos/{arq}` | Exclui anexo. |
-| `GET` | `/api/prompts/export` | Exporta tudo em JSON (com anexos embutidos). |
+| `GET` | `/api/prompts/export` | Exporta todos em JSON (com anexos embutidos). |
 | `POST` | `/api/prompts/import` | Importa JSON (`modo=mesclar\|substituir`). |
 
 Os endpoints `/ui/...` devolvem **fragmentos HTML** para o HTMX — mesma lógica, outra apresentação.
