@@ -67,7 +67,19 @@ def exportar_um(prompt_id: int, conn=Depends(get_db)):
     if not p:
         raise HTTPException(404, "Prompt não encontrado.")
     p["arquivos"] = db.listar_arquivos_completos(conn, prompt_id)
-    corpo = {"versao": 1, "exportado_em": db.agora_iso(), "total": 1, "prompts": [p]}
+    instrucao = (
+        "Você recebeu um prompt exportado do Prompt Master. "
+        "Execute o campo 'prompt' como instrução principal. "
+        "Se houver itens em 'arquivos', o campo 'conteudo' de cada um é contexto adicional para a tarefa. "
+        "Ignore campos técnicos como 'versao', 'exportado_em', 'id', 'data', 'fixado'."
+    )
+    corpo = {
+        "_instrucao": instrucao,
+        "versao": 1,
+        "exportado_em": db.agora_iso(),
+        "total": 1,
+        "prompts": [p],
+    }
     nome_base = re.sub(r"[^A-Za-z0-9._-]", "_", p["titulo"])[:50] or f"prompt-{prompt_id}"
     return Response(
         content=json.dumps(corpo, ensure_ascii=False, indent=2),
