@@ -1,3 +1,8 @@
+<!-- Datalist atualizado a cada swap do HTMX; formulários referenciam com list="lista-categorias" -->
+<datalist id="lista-categorias">
+  {% for cat, _ in categorias %}<option value="{{ cat }}">{% endfor %}
+</datalist>
+
 <nav class="chips" aria-label="Categorias">
   <button type="button" class="chip{{ ' ativo' if not filtro }}"
           hx-get="/ui/prompts" hx-target="#lista">Todas ({{ total }})</button>

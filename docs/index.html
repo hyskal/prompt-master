@@ -65,7 +65,7 @@
               hx-on::after-request="if (event.detail.successful) { this.reset(); this.closest('details').open = false; }">
           <div class="linha">
             <label>Título <input name="titulo" required maxlength="200" placeholder="Ex.: Revisor de código"></label>
-            <label>Categoria <input name="categoria" placeholder="Geral"></label>
+            <label>Categoria <input name="categoria" placeholder="Geral" list="lista-categorias" autocomplete="off"></label>
             <label>Tags <small>(até 3, separadas por vírgula)</small>
               <input name="tags" placeholder="python, revisão, qualidade"></label>
           </div>
