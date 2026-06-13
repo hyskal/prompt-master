@@ -8,6 +8,7 @@
   const CHAVE_URL = "pm_api_url";
   const CHAVE_KEY = "pm_api_key";
   const MAX_ARQUIVOS = 5;
+  const URL_PADRAO = "https://smtlab.duckdns.org/prompts"; // Pré-configurada; mude conforme necessário
 
   const $ = (sel) => document.querySelector(sel);
   const apiUrl = () => localStorage.getItem(CHAVE_URL) || "";
@@ -41,7 +42,8 @@
   function mostrarConexao(mensagem) {
     $("#app").hidden = true;
     $("#tela-conexao").hidden = false;
-    if (apiUrl()) $("#campo-url").value = apiUrl();
+    // Pré-preencher com URL salva ou padrão
+    $("#campo-url").value = apiUrl() || URL_PADRAO;
     const erro = $("#erro-conexao");
     erro.textContent = mensagem || "";
     erro.hidden = !mensagem;
