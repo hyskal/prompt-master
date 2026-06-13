@@ -1,6 +1,6 @@
 # ⚡ Prompt Master
 
-Portal de prompts para IA: organize por **categoria**, **copie com um clique**, **edite inline**, **fixe** os favoritos, anexe **até 5 arquivos** por prompt, exporte prompts individuais como **JSON pronto para IA** e faça backup com **export/import em lote**.
+Portal de prompts para IA: organize por **categoria**, **busque em tempo real**, **copie com um clique**, **edite inline**, **duplique**, **fixe** os favoritos, anexe **até 5 arquivos** por prompt, exporte prompts individuais como **JSON pronto para IA** e faça backup com **export/import em lote**.
 
 - **Frontend**: página estática em [HTMX](https://htmx.org) (pasta [`docs/`](docs/)), publicada no **GitHub Pages**.
 - **Backend**: API em [FastAPI](https://fastapi.tiangolo.com) (pasta [`backend/`](backend/)) com SQLite.
@@ -18,8 +18,10 @@ Cada prompt guarda: **texto, título, data (automática), categoria e até 3 tag
 - [Deploy: Backend em servidor Linux (Nginx + systemd)](#deploy-backend-em-servidor-linux-nginx--systemd)
 - [Deploy: Docker (Render, Railway)](#deploy-docker-render-railway)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Funcionalidades do portal](#funcionalidades-do-portal)
 - [A API](#a-api)
 - [Resolução de problemas](#resolução-de-problemas)
+- [Roadmap](#roadmap)
 
 ---
 
@@ -231,11 +233,26 @@ No **Render**/**Railway**: crie um serviço web usando o `backend/Dockerfile` (c
 | 📋 **Copiar** | Copia o texto do prompt para o clipboard. |
 | 📦 **Exportar JSON** | Copia o JSON completo (prompt + conteúdo dos anexos) para o clipboard, pronto para colar em uma IA. Fallback automático para download se o clipboard for negado. |
 | ✏️ **Editar** | Abre formulário inline para editar título, categoria, tags e texto. |
+| 🗒 **Duplicar** | Cria uma cópia do prompt (com prefixo "Cópia de") na mesma categoria. |
 | 📌 **Fixar** | Mantém o prompt no topo da lista. |
 | 📎 **Anexar** | Adiciona arquivos ao prompt (até 5). |
 | 🗑 **Excluir** | Remove o prompt e seus anexos. |
 | ⬇ **Baixar JSON** *(cabeçalho)* | Exporta todos os prompts em lote. |
 | ⬆ **Importar JSON** | Importa prompts de um arquivo JSON. |
+
+### Busca
+
+O campo de busca acima da lista filtra **em tempo real** (350 ms de debounce) por:
+
+- Título do prompt
+- Texto do prompt
+- Qualquer uma das tags
+
+A busca é combinável com o filtro de categoria (chips abaixo da barra).
+
+### Categorias com autocomplete
+
+Ao criar ou editar um prompt, o campo **Categoria** sugere automaticamente todas as categorias existentes, evitando variações de grafia.
 
 ### Exportar JSON para IA
 
@@ -261,12 +278,13 @@ O botão **📦 Exportar JSON** gera um JSON que inclui um campo `_instrucao` no
 | Método | Rota | Descrição |
 |---|---|---|
 | `GET` | `/api/health` | Health check (requer auth). |
-| `GET` | `/api/prompts?categoria=` | Lista (fixados primeiro, mais recentes depois). |
+| `GET` | `/api/prompts?categoria=&q=` | Lista (fixados primeiro). `q` filtra por título, texto e tags. |
 | `POST` | `/api/prompts` | Cria prompt. |
 | `GET` | `/api/prompts/{id}` | Detalhe. |
 | `PATCH` | `/api/prompts/{id}` | Atualiza título, texto, categoria e tags. |
 | `DELETE` | `/api/prompts/{id}` | Exclui (remove anexos em cascata). |
 | `PATCH` | `/api/prompts/{id}/fixar` | Alterna fixado. |
+| `POST` | `/api/prompts/{id}/duplicar` | Cria cópia do prompt (sem anexos). |
 | `GET` | `/api/prompts/{id}/export` | Exporta prompt individual com anexos e instrução para IA. |
 | `POST` | `/api/prompts/{id}/arquivos` | Anexa arquivos (multipart, campo `arquivos`). |
 | `GET` | `/api/prompts/{id}/arquivos/{arq}` | Baixa anexo. |
@@ -356,3 +374,27 @@ Páginas HTTPS (GitHub Pages) só acessam APIs HTTPS — exceto `http://localhos
 sudo certbot renew
 sudo systemctl reload nginx
 ```
+
+---
+
+## Roadmap
+
+### Variáveis dinâmicas em prompts
+
+Permitir marcadores `{{nome_da_variavel}}` no texto do prompt. Ao copiar ou exportar, o portal detecta as variáveis, exibe um mini-formulário para preenchimento e substitui os valores antes de copiar para o clipboard.
+
+**Exemplo de prompt:**
+
+```
+Revise o código em {{linguagem}} abaixo considerando as regras de {{contexto}}:
+
+{{codigo}}
+```
+
+Ao clicar em **Copiar**, aparece um modal com campos para `linguagem`, `contexto` e `codigo`. O texto final copiado já vem com os valores substituídos.
+
+**Escopo planejado:**
+- Detecção automática de `{{variavel}}` no texto do prompt
+- Modal inline (sem reload) gerado dinamicamente com um campo por variável
+- Histórico local dos últimos valores preenchidos por prompt (localStorage)
+- Valores também substituídos no **Exportar JSON**
