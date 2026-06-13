@@ -122,6 +122,24 @@ def excluir_prompt(conn: sqlite3.Connection, prompt_id: int) -> bool:
     return conn.execute("DELETE FROM prompts WHERE id = ?", (prompt_id,)).rowcount > 0
 
 
+def atualizar_prompt(
+    conn: sqlite3.Connection,
+    prompt_id: int,
+    titulo: str,
+    prompt: str,
+    categoria: str,
+    tags: list[str],
+) -> dict | None:
+    t = (list(tags) + [None, None, None])[:3]
+    cur = conn.execute(
+        "UPDATE prompts SET titulo=?, prompt=?, categoria=?, tag1=?, tag2=?, tag3=? WHERE id=?",
+        (titulo, prompt, categoria, t[0], t[1], t[2], prompt_id),
+    )
+    if cur.rowcount == 0:
+        return None
+    return obter_prompt(conn, prompt_id)
+
+
 def alternar_fixado(conn: sqlite3.Connection, prompt_id: int) -> dict | None:
     cur = conn.execute("UPDATE prompts SET fixado = 1 - fixado WHERE id = ?", (prompt_id,))
     if cur.rowcount == 0:

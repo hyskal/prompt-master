@@ -25,6 +25,9 @@ class PromptIn(BaseModel):
         return v
 
 
+PromptUpdate = PromptIn  # mesmos campos, semântica de atualização parcial
+
+
 class ArquivoOut(BaseModel):
     id: int
     nome: str

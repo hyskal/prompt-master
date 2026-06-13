@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, Upl
 from . import db
 from .arquivos import anexar_uploads, processar_import
 from .db import get_db
-from .schemas import ArquivoOut, PromptIn, PromptOut
+from .schemas import ArquivoOut, PromptIn, PromptOut, PromptUpdate
 
 router = APIRouter()
 
@@ -74,6 +74,17 @@ def excluir(prompt_id: int, conn=Depends(get_db)):
     if not db.excluir_prompt(conn, prompt_id):
         raise HTTPException(404, "Prompt não encontrado.")
     conn.commit()
+
+
+@router.patch("/prompts/{prompt_id}", response_model=PromptOut)
+def atualizar(prompt_id: int, dados: PromptUpdate, conn=Depends(get_db)):
+    p = db.atualizar_prompt(
+        conn, prompt_id, dados.titulo, dados.prompt, dados.categoria, dados.tags
+    )
+    if not p:
+        raise HTTPException(404, "Prompt não encontrado.")
+    conn.commit()
+    return p
 
 
 @router.patch("/prompts/{prompt_id}/fixar", response_model=PromptOut)

@@ -109,6 +109,44 @@ def ui_importar(
     return _render_lista(request, conn)
 
 
+@router.get("/prompts/{prompt_id}/editar")
+def ui_form_editar(
+    request: Request,
+    prompt_id: int,
+    categoria: str | None = None,
+    conn=Depends(get_db),
+):
+    p = db.obter_prompt(conn, prompt_id)
+    if not p:
+        raise HTTPException(404, "Prompt não encontrado.")
+    qs_filtro = f"?categoria={quote(categoria)}" if categoria else ""
+    return templates.TemplateResponse(
+        request, "form-editar.html", {"p": p, "qs_filtro": qs_filtro}
+    )
+
+
+@router.post("/prompts/{prompt_id}/editar")
+def ui_salvar_edicao(
+    request: Request,
+    prompt_id: int,
+    titulo: str = Form(""),
+    prompt: str = Form(""),
+    categoria: str = Form("Geral"),
+    tags: str = Form(""),
+    conn=Depends(get_db),
+):
+    lista_tags = [t.strip() for t in tags.split(",") if t.strip()][:3]
+    try:
+        dados = PromptIn(titulo=titulo, prompt=prompt, categoria=categoria, tags=lista_tags)
+    except ValidationError:
+        raise HTTPException(400, "Preencha o título e o texto do prompt.")
+    p = db.atualizar_prompt(conn, prompt_id, dados.titulo, dados.prompt, dados.categoria, dados.tags)
+    if not p:
+        raise HTTPException(404, "Prompt não encontrado.")
+    conn.commit()
+    return _render_lista(request, conn)
+
+
 @router.delete("/prompts/{prompt_id}")
 def ui_excluir(
     request: Request,

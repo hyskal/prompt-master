@@ -305,3 +305,25 @@ label.radio input { width: auto; }
   max-width: min(90vw, 34rem);
   box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
 }
+
+/* ---------- Card de edição inline ---------- */
+
+.card-editando { grid-column: 1 / -1; }
+
+.card-editando form {
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+
+.campo-editar {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+
+.campo-editar label {
+  margin-bottom: 0;
+  font-weight: 600;
+  font-size: .82rem;
+}
