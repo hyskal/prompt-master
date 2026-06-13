@@ -380,7 +380,12 @@ label.radio input { width: auto; }
 .acoes { margin-top: auto; border-top: 1px solid var(--borda); padding-top: .65rem; }
 .acoes-linha { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
 .form-anexar { display: contents; }
-.btn-anexar { cursor: pointer; }
+.btn-icon.btn-anexar {
+  display: inline-flex;
+  margin-bottom: 0;
+  font-size: inherit;
+  color: var(--texto-suave);
+}
 
 /* ─── Edição inline ─── */
 
