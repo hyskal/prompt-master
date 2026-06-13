@@ -85,14 +85,35 @@ def row_para_dict(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
     }
 
 
-def listar_prompts(conn: sqlite3.Connection, categoria: str | None = None) -> list[dict]:
-    sql = "SELECT * FROM prompts"
-    params: tuple = ()
+def listar_prompts(
+    conn: sqlite3.Connection,
+    categoria: str | None = None,
+    q: str | None = None,
+) -> list[dict]:
+    conditions, params = [], []
     if categoria:
-        sql += " WHERE categoria = ?"
-        params = (categoria,)
+        conditions.append("categoria = ?")
+        params.append(categoria)
+    if q:
+        like = f"%{q}%"
+        conditions.append(
+            "(titulo LIKE ? OR prompt LIKE ? OR tag1 LIKE ? OR tag2 LIKE ? OR tag3 LIKE ?)"
+        )
+        params.extend([like, like, like, like, like])
+    sql = "SELECT * FROM prompts"
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
     sql += " ORDER BY fixado DESC, data DESC, id DESC"
     return [row_para_dict(conn, r) for r in conn.execute(sql, params)]
+
+
+def duplicar_prompt(conn: sqlite3.Connection, prompt_id: int) -> dict | None:
+    p = obter_prompt(conn, prompt_id)
+    if not p:
+        return None
+    return inserir_prompt(
+        conn, "Cópia de " + p["titulo"], p["prompt"], p["categoria"], p["tags"], agora_iso()
+    )
 
 
 def obter_prompt(conn: sqlite3.Connection, prompt_id: int) -> dict | None:

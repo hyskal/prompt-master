@@ -45,8 +45,8 @@ templates.env.filters["data_br"] = _data_br
 templates.env.filters["tamanho_legivel"] = _tamanho_legivel
 
 
-def _render_lista(request: Request, conn, categoria: str | None = None):
-    prompts = db.listar_prompts(conn, categoria)
+def _render_lista(request: Request, conn, categoria: str | None = None, q: str | None = None):
+    prompts = db.listar_prompts(conn, categoria, q)
     fixados = [p for p in prompts if p["fixado"]]
     grupos: dict[str, list[dict]] = {}
     for p in prompts:
@@ -71,8 +71,8 @@ def _render_lista(request: Request, conn, categoria: str | None = None):
 
 
 @router.get("/prompts")
-def ui_listar(request: Request, categoria: str | None = None, conn=Depends(get_db)):
-    return _render_lista(request, conn, categoria or None)
+def ui_listar(request: Request, categoria: str | None = None, q: str | None = None, conn=Depends(get_db)):
+    return _render_lista(request, conn, categoria or None, q or None)
 
 
 @router.post("/prompts")
@@ -107,6 +107,19 @@ def ui_importar(
 ):
     processar_import(conn, arquivo, modo)
     return _render_lista(request, conn)
+
+
+@router.post("/prompts/{prompt_id}/duplicar")
+def ui_duplicar(
+    request: Request,
+    prompt_id: int,
+    categoria: str | None = None,
+    conn=Depends(get_db),
+):
+    if not db.duplicar_prompt(conn, prompt_id):
+        raise HTTPException(404, "Prompt não encontrado.")
+    conn.commit()
+    return _render_lista(request, conn, categoria or None)
 
 
 @router.get("/prompts/{prompt_id}/editar")

@@ -20,8 +20,8 @@ def health():
 
 
 @router.get("/prompts", response_model=list[PromptOut])
-def listar(categoria: str | None = None, conn=Depends(get_db)):
-    return db.listar_prompts(conn, categoria)
+def listar(categoria: str | None = None, q: str | None = None, conn=Depends(get_db)):
+    return db.listar_prompts(conn, categoria, q)
 
 
 @router.post("/prompts", response_model=PromptOut, status_code=201)
@@ -59,6 +59,15 @@ def importar(
     conn=Depends(get_db),
 ):
     return processar_import(conn, arquivo, modo)
+
+
+@router.post("/prompts/{prompt_id}/duplicar", response_model=PromptOut, status_code=201)
+def duplicar(prompt_id: int, conn=Depends(get_db)):
+    p = db.duplicar_prompt(conn, prompt_id)
+    if not p:
+        raise HTTPException(404, "Prompt não encontrado.")
+    conn.commit()
+    return p
 
 
 @router.get("/prompts/{prompt_id}/export")

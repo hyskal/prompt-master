@@ -101,6 +101,16 @@
       </details>
     </section>
 
+    <div class="barra-busca">
+      <input type="search" id="campo-busca" name="q"
+             hx-get="/ui/prompts"
+             hx-trigger="input delay:350ms, search"
+             hx-target="#lista"
+             hx-swap="innerHTML"
+             placeholder="Buscar por título, texto ou tag…"
+             autocomplete="off">
+    </div>
+
     <div id="lista" class="lista" aria-live="polite">
       <p class="vazio">Carregando prompts…</p>
     </div>

@@ -412,6 +412,17 @@ label.radio input { width: auto; }
   white-space: nowrap;
 }
 
+/* ─── Barra de busca ─── */
+
+.barra-busca {
+  max-width: 64rem;
+  margin: .75rem auto 0;
+  padding: 0 1rem;
+}
+.barra-busca input {
+  background: var(--painel);
+}
+
 /* ─── Mobile ─── */
 
 @media (max-width: 600px) {
