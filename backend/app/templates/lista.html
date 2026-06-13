@@ -1,0 +1,33 @@
+<nav class="chips" aria-label="Categorias">
+  <button type="button" class="chip{{ ' ativo' if not filtro }}"
+          hx-get="/ui/prompts" hx-target="#lista">Todas ({{ total }})</button>
+  {% for cat, qtd in categorias %}
+  <button type="button" class="chip{{ ' ativo' if filtro == cat }}"
+          hx-get="/ui/prompts?categoria={{ cat|urlencode }}"
+          hx-target="#lista">{{ cat }} ({{ qtd }})</button>
+  {% endfor %}
+</nav>
+
+{% if not total %}
+<p class="vazio">Nenhum prompt cadastrado ainda. Crie o primeiro em “➕ Novo prompt”.</p>
+{% elif not fixados and not grupos %}
+<p class="vazio">Nenhum prompt nesta categoria.</p>
+{% endif %}
+
+{% if fixados %}
+<section class="grupo grupo-fixados">
+  <h2>📌 Fixados</h2>
+  <div class="cards">
+    {% for p in fixados %}{% include "card.html" %}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% for cat, prompts in grupos.items() %}
+<section class="grupo">
+  <h2>{{ cat }}</h2>
+  <div class="cards">
+    {% for p in prompts %}{% include "card.html" %}{% endfor %}
+  </div>
+</section>
+{% endfor %}

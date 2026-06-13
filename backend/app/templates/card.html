@@ -1,0 +1,54 @@
+<article class="card{{ ' card-fixado' if p.fixado }}">
+  <header class="card-topo">
+    <h3>{{ p.titulo }}</h3>
+    <span class="badge">{{ p.categoria }}</span>
+  </header>
+
+  <pre class="texto">{{ p.prompt }}</pre>
+
+  <div class="meta">
+    {% for t in p.tags %}<span class="tag">#{{ t }}</span>{% endfor %}
+    <time datetime="{{ p.data }}">{{ p.data|data_br }}</time>
+  </div>
+
+  {% if p.arquivos %}
+  <ul class="anexos">
+    {% for a in p.arquivos %}
+    <li>
+      <button type="button" class="btn-baixar"
+              data-url="/api/prompts/{{ p.id }}/arquivos/{{ a.id }}"
+              data-nome="{{ a.nome }}"
+              title="Baixar {{ a.nome }}">📄 {{ a.nome }} <small>({{ a.tamanho|tamanho_legivel }})</small></button>
+      <button type="button" class="btn-x"
+              hx-delete="/ui/prompts/{{ p.id }}/arquivos/{{ a.id }}{{ qs_filtro }}"
+              hx-target="#lista"
+              hx-confirm="Excluir o arquivo “{{ a.nome }}”?"
+              title="Excluir arquivo">×</button>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <footer class="acoes">
+    <button type="button" class="btn btn-copiar">📋 Copiar</button>
+    <button type="button" class="btn btn-fixar{{ ' ativo' if p.fixado }}"
+            hx-patch="/ui/prompts/{{ p.id }}/fixar{{ qs_filtro }}"
+            hx-target="#lista">{{ '📌 Fixado' if p.fixado else '📌 Fixar' }}</button>
+    {% if p.arquivos|length < max_arquivos %}
+    <form class="form-anexar"
+          hx-post="/ui/prompts/{{ p.id }}/arquivos{{ qs_filtro }}"
+          hx-encoding="multipart/form-data"
+          hx-target="#lista">
+      <label class="btn btn-anexar">📎 Anexar
+        <input type="file" name="arquivos" multiple hidden
+               accept="{{ accept }}"
+               onchange="if (this.files.length) this.form.requestSubmit()">
+      </label>
+    </form>
+    {% endif %}
+    <button type="button" class="btn btn-excluir"
+            hx-delete="/ui/prompts/{{ p.id }}{{ qs_filtro }}"
+            hx-target="#lista"
+            hx-confirm="Excluir o prompt “{{ p.titulo }}”?">🗑 Excluir</button>
+  </footer>
+</article>

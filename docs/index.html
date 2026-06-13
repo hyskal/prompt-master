@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prompt Master — seus prompts de IA</title>
+  <meta name="description" content="Portal de prompts para IA: organize por categoria, copie rápido, fixe favoritos e faça backup em JSON.">
+  <link rel="stylesheet" href="./style.css">
+  <meta name="htmx-config" content='{"selfRequestsOnly": false}'>
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div id="toast" hidden></div>
+
+  <!-- Tela de conexão: o portal é estático; os dados vêm da API informada aqui. -->
+  <main id="tela-conexao" class="tela-conexao">
+    <h1>⚡ Prompt Master</h1>
+    <p class="subtitulo">Seu acervo de prompts para IA. Conecte-se à sua API para carregar os prompts.</p>
+    <form id="form-conexao" class="painel">
+      <label>URL da API
+        <input id="campo-url" type="text" autocomplete="url"
+               placeholder="http://localhost:8000 ou https://sua-api.exemplo.com" required>
+      </label>
+      <label>Chave de API <small>(opcional, se a API exigir)</small>
+        <input id="campo-chave" type="password" autocomplete="off" placeholder="X-API-Key">
+      </label>
+      <button type="submit" id="btn-conectar" class="btn btn-primario">Conectar</button>
+      <p id="erro-conexao" class="erro" hidden></p>
+    </form>
+    <p class="dica">A página HTTPS do GitHub Pages só acessa APIs HTTPS — exceto <code>http://localhost</code>, liberado para uso local.</p>
+  </main>
+
+  <div id="app" hidden>
+    <header class="topo">
+      <h1>⚡ Prompt Master</h1>
+      <div class="topo-acoes">
+        <span id="status-api" class="status-api" title="API conectada"></span>
+        <button type="button" id="btn-exportar" class="btn">⬇ Baixar JSON</button>
+        <button type="button" id="btn-sair" class="btn">Desconectar</button>
+      </div>
+    </header>
+
+    <section class="paineis">
+      <details class="painel">
+        <summary>➕ Novo prompt</summary>
+        <form id="form-novo"
+              hx-post="/ui/prompts"
+              hx-encoding="multipart/form-data"
+              hx-target="#lista"
+              hx-disabled-elt="find button[type=submit]"
+              hx-on::after-request="if (event.detail.successful) { this.reset(); this.closest('details').open = false; }">
+          <div class="linha">
+            <label>Título <input name="titulo" required maxlength="200" placeholder="Ex.: Revisor de código"></label>
+            <label>Categoria <input name="categoria" placeholder="Geral"></label>
+            <label>Tags <small>(até 3, separadas por vírgula)</small>
+              <input name="tags" placeholder="python, revisão, qualidade"></label>
+          </div>
+          <label>Prompt
+            <textarea name="prompt" rows="6" required
+                      placeholder="Cole aqui o texto do prompt…"></textarea>
+          </label>
+          <label>Arquivos <small>(até 5 — .md, .json, .js, .html, .py e outros formatos de código)</small>
+            <input type="file" name="arquivos" multiple
+                   accept=".bash,.bat,.c,.cfg,.conf,.cpp,.cs,.css,.csv,.go,.h,.hpp,.htm,.html,.ini,.ipynb,.java,.js,.json,.jsx,.kt,.markdown,.md,.mjs,.php,.ps1,.py,.rb,.rs,.sh,.sql,.swift,.toml,.ts,.tsx,.txt,.xml,.yaml,.yml">
+          </label>
+          <button type="submit" class="btn btn-primario">Salvar prompt</button>
+          <span class="htmx-indicator">Salvando…</span>
+        </form>
+      </details>
+
+      <details class="painel">
+        <summary>⬆ Importar JSON</summary>
+        <form id="form-importar"
+              hx-post="/ui/prompts/import"
+              hx-encoding="multipart/form-data"
+              hx-target="#lista"
+              hx-disabled-elt="find button[type=submit]"
+              hx-on::after-request="if (event.detail.successful) this.reset()">
+          <label>Arquivo JSON <input type="file" name="arquivo" accept=".json,application/json" required></label>
+          <div class="linha">
+            <label class="radio"><input type="radio" name="modo" value="mesclar" checked> Mesclar com os existentes</label>
+            <label class="radio"><input type="radio" name="modo" value="substituir"> Substituir tudo</label>
+          </div>
+          <button type="submit" class="btn btn-primario">Importar</button>
+          <span class="htmx-indicator">Importando…</span>
+        </form>
+      </details>
+    </section>
+
+    <div id="lista" class="lista" aria-live="polite">
+      <p class="vazio">Carregando prompts…</p>
+    </div>
+  </div>
+</body>
+</html>
