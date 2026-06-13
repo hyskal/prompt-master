@@ -2,12 +2,24 @@
 
 Portal de prompts para IA: organize por **categoria**, **copie com um clique**, **fixe** os favoritos, anexe **até 5 arquivos** por prompt e faça backup com **export/import em JSON**.
 
-- **Frontend**: página estática em [HTMX](https://htmx.org) (pasta [`docs/`](docs/)), pensada para o **GitHub Pages**.
-- **Backend**: API em [FastAPI](https://fastapi.tiangolo.com) (pasta [`backend/`](backend/)) com SQLite — carrega, salva e deleta os prompts.
+- **Frontend**: página estática em [HTMX](https://htmx.org) (pasta [`docs/`](docs/)), publicada no **GitHub Pages**.
+- **Backend**: API em [FastAPI](https://fastapi.tiangolo.com) (pasta [`backend/`](backend/)) com SQLite.
 
-Ao abrir o portal, você informa a **URL da sua API** (e a chave, se houver). A escolha fica salva no navegador e os prompts são carregados dela. Um mesmo portal publicado pode, portanto, conversar com a API rodando na sua máquina ou num servidor.
+Ao abrir o portal, você informa a **URL da sua API** (e a chave, se houver). A escolha fica salva no navegador. Um mesmo portal publicado pode conversar com a API rodando na sua máquina ou num servidor.
 
 Cada prompt guarda: **texto, título, data (automática), categoria e até 3 tags** — além dos anexos.
+
+---
+
+## Sumário
+
+- [Rodando localmente](#rodando-localmente)
+- [Deploy: Frontend no GitHub Pages](#deploy-frontend-no-github-pages)
+- [Deploy: Backend em servidor Linux (Nginx + systemd)](#deploy-backend-em-servidor-linux-nginx--systemd)
+- [Deploy: Docker (Render, Railway)](#deploy-docker-render-railway)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
+- [A API](#a-api)
+- [Resolução de problemas](#resolução-de-problemas)
 
 ---
 
@@ -23,48 +35,192 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Abra <http://localhost:8000> — o backend também serve o frontend. Na tela inicial, conecte-se usando `http://localhost:8000`.
+Abra <http://localhost:8000> — o backend também serve o frontend. Na tela inicial, conecte-se com `http://localhost:8000`.
 
 A documentação interativa da API (Swagger) fica em <http://localhost:8000/docs>.
 
-## Variáveis de ambiente
+---
 
-| Variável | Default | Descrição |
-|---|---|---|
-| `API_KEY` | *(vazia)* | Se definida, todos os endpoints exigem o header `X-API-Key`. Informe a chave na tela de conexão do portal. |
-| `CORS_ORIGINS` | `*` | Origens permitidas, separadas por vírgula. Para travar no seu portal: `https://SEU-USUARIO.github.io` (a origem **não** inclui o caminho `/prompt-master`). |
-| `DB_PATH` | `backend/prompts.db` | Caminho do arquivo SQLite (`/data/prompts.db` na imagem Docker). |
-| `DOCS_DIR` | *(auto)* | Pasta do frontend a servir na raiz (detectada automaticamente). |
-
-## Publicando o frontend no GitHub Pages
+## Deploy: Frontend no GitHub Pages
 
 1. No repositório: **Settings → Pages**.
 2. Em *Build and deployment*, escolha **Deploy from a branch**.
 3. Branch `main`, pasta **`/docs`** → *Save*.
 4. O portal fica em `https://SEU-USUARIO.github.io/prompt-master/`.
 
+Para pré-preencher a URL da API, edite a constante em `docs/app.js`:
+
+```js
+const URL_PADRAO = "https://sua-api.exemplo.com/prompts";
+```
+
 > O frontend usa caminhos relativos, então funciona no subcaminho do Pages sem ajustes.
 
-## Publicando o backend (Render, Railway etc.)
+---
 
-A imagem Docker embute frontend + backend e é o jeito mais simples:
+## Deploy: Backend em servidor Linux (Nginx + systemd)
+
+Instruções testadas em **Ubuntu 24.04** (Oracle Cloud / qualquer VPS).
+
+### 1. Pré-requisitos
+
+```bash
+sudo apt update && sudo apt install -y python3 python3-venv python3-pip nginx certbot python3-certbot-nginx
+
+# Abrir portas no firewall
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+```
+
+Também abra a porta **443** no grupo de segurança do seu provedor (Oracle Security List, AWS Security Group, etc.).
+
+### 2. Clonar e instalar
+
+```bash
+cd /home/ubuntu
+git clone https://github.com/hyskal/prompt-master.git
+cd prompt-master/backend
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3. Configurar variáveis de ambiente
+
+```bash
+cat << 'EOF' > /home/ubuntu/prompt-master/backend/.env
+API_KEY=sua-chave-secreta
+CORS_ORIGINS=https://SEU-USUARIO.github.io
+DB_PATH=/home/ubuntu/prompt-master/backend/prompts.db
+PORT=5008
+DOCS_DIR=
+EOF
+```
+
+> `DOCS_DIR=` vazio desativa os arquivos estáticos no servidor — o frontend já está no GitHub Pages.
+
+### 4. Serviço systemd
+
+```bash
+sudo bash -c 'cat << EOF > /etc/systemd/system/prompt-master.service
+[Unit]
+Description=Prompt Master API
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/prompt-master/backend
+EnvironmentFile=/home/ubuntu/prompt-master/backend/.env
+ExecStart=/home/ubuntu/prompt-master/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 5008
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF'
+
+sudo systemctl daemon-reload
+sudo systemctl enable prompt-master
+sudo systemctl start prompt-master
+sudo systemctl status prompt-master
+```
+
+### 5. Certificado SSL (Let's Encrypt)
+
+```bash
+sudo certbot certonly --nginx -d seu-dominio.duckdns.org
+```
+
+### 6. Nginx — proxy reverso
+
+```bash
+sudo bash -c 'cat << "EOF" > /etc/nginx/sites-available/prompt-master
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name seu-dominio.duckdns.org;
+
+    ssl_certificate /etc/letsencrypt/live/seu-dominio.duckdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/seu-dominio.duckdns.org/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    location ^~ /prompts/ {
+        proxy_pass http://127.0.0.1:5008/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name seu-dominio.duckdns.org;
+    return 301 https://$server_name$request_uri;
+}
+EOF'
+
+sudo ln -s /etc/nginx/sites-available/prompt-master /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+> **Não adicione** headers `Access-Control-*` no Nginx. O FastAPI (CORSMiddleware) já os envia; duplicar causa erro de CORS no browser.
+
+### 7. Verificar
+
+```bash
+# Health check via HTTPS
+curl -H 'X-API-Key: sua-chave-secreta' \
+  https://seu-dominio.duckdns.org/prompts/api/health
+# Esperado: {"status":"ok","app":"prompt-master"}
+```
+
+### Aliases úteis
+
+Adicione ao `~/.bashrc`:
+
+```bash
+alias pmstart='sudo systemctl start prompt-master'
+alias pmstop='sudo systemctl stop prompt-master'
+alias pmrestart='sudo systemctl restart prompt-master'
+alias pmstatus='sudo systemctl status prompt-master'
+alias pmlog='sudo journalctl -u prompt-master -f'
+alias pmupdate='cd /home/ubuntu/prompt-master && git pull && sudo systemctl restart prompt-master'
+```
+
+---
+
+## Deploy: Docker (Render, Railway)
 
 ```bash
 docker build -f backend/Dockerfile -t prompt-master .
-docker run -p 8000:8000 -v prompt-master-dados:/data prompt-master
+docker run -p 8000:8000 -v prompt-master-dados:/data \
+  -e API_KEY=sua-chave -e CORS_ORIGINS=https://SEU-USUARIO.github.io \
+  prompt-master
 ```
 
-No **Render**/**Railway**: crie um serviço web a partir do repositório usando o `backend/Dockerfile` (contexto de build = raiz do repo). Recomendações:
+No **Render**/**Railway**: crie um serviço web usando o `backend/Dockerfile` (contexto de build = raiz do repo).
 
-- **1 instância/worker** (SQLite com escrita não é multi-processo).
-- **Disco persistente montado em `/data`** — sem ele, o `prompts.db` é apagado a cada deploy. Enquanto não tiver disco, use o **⬇ Baixar JSON** como backup e o **⬆ Importar** para restaurar.
-- Health check: rota `/` (responde sem autenticação).
-- Defina `API_KEY` se a API ficar exposta na internet.
+- **1 instância** (SQLite não é multi-processo).
+- **Disco persistente em `/data`** — sem ele, o banco é apagado a cada deploy.
+- Health check: rota `GET /` (sem autenticação quando `DOCS_DIR` não está vazio).
 
-### HTTPS, localhost e o aviso do Chrome
+---
 
-- O GitHub Pages é **HTTPS**, e páginas HTTPS **não acessam APIs `http://`** (mixed content) — **exceto `http://localhost`**, que é liberado. Ou seja: API remota precisa de HTTPS (Render/Railway já fornecem); API local funciona normalmente.
-- Ao conectar o portal publicado a `http://localhost:8000`, o Chrome pode pedir permissão de **acesso à rede local** (Private Network Access). A API já responde ao preflight com `Access-Control-Allow-Private-Network: true`; basta aceitar o aviso.
+## Variáveis de ambiente
+
+| Variável | Default | Descrição |
+|---|---|---|
+| `API_KEY` | *(vazia)* | Todos os endpoints exigem `X-API-Key` se definida. |
+| `CORS_ORIGINS` | `*` | Origens permitidas separadas por vírgula. Ex: `https://hyskal.github.io` |
+| `DB_PATH` | `backend/prompts.db` | Caminho do SQLite. |
+| `DOCS_DIR` | *(auto)* | Pasta do frontend. Deixe vazio no servidor para desativar static files. |
+| `PORT` | `8000` | Porta do uvicorn (usado no Dockerfile). |
 
 ---
 
@@ -72,43 +228,46 @@ No **Render**/**Railway**: crie um serviço web a partir do repositório usando 
 
 | Método | Rota | Descrição |
 |---|---|---|
-| `GET` | `/api/health` | Teste de conexão (autenticado, valida URL + chave). |
-| `GET` | `/api/prompts?categoria=` | Lista (fixados primeiro, depois mais recentes). |
-| `POST` | `/api/prompts` | Cria. Corpo: `titulo`, `prompt`, `categoria`, `tags` (máx. 3). |
+| `GET` | `/api/health` | Health check (requer auth). |
+| `GET` | `/api/prompts?categoria=` | Lista (fixados primeiro, mais recentes depois). |
+| `POST` | `/api/prompts` | Cria prompt. |
 | `GET` | `/api/prompts/{id}` | Detalhe. |
-| `DELETE` | `/api/prompts/{id}` | Exclui (e os anexos, em cascata). |
-| `PATCH` | `/api/prompts/{id}/fixar` | Alterna o fixado. |
+| `DELETE` | `/api/prompts/{id}` | Exclui (remove anexos em cascata). |
+| `PATCH` | `/api/prompts/{id}/fixar` | Alterna fixado. |
 | `POST` | `/api/prompts/{id}/arquivos` | Anexa arquivos (multipart, campo `arquivos`). |
-| `GET` | `/api/prompts/{id}/arquivos/{arq}` | Baixa um anexo. |
-| `DELETE` | `/api/prompts/{id}/arquivos/{arq}` | Exclui um anexo. |
-| `GET` | `/api/prompts/export` | Baixa tudo em JSON (com anexos embutidos). |
-| `POST` | `/api/prompts/import` | Importa JSON (multipart: `arquivo` + `modo=mesclar\|substituir`). |
+| `GET` | `/api/prompts/{id}/arquivos/{arq}` | Baixa anexo. |
+| `DELETE` | `/api/prompts/{id}/arquivos/{arq}` | Exclui anexo. |
+| `GET` | `/api/prompts/export` | Exporta tudo em JSON (com anexos embutidos). |
+| `POST` | `/api/prompts/import` | Importa JSON (`modo=mesclar\|substituir`). |
 
-Já os endpoints `/ui/...` devolvem **fragmentos HTML** para o HTMX do portal — mesma lógica, outra apresentação.
+Os endpoints `/ui/...` devolvem **fragmentos HTML** para o HTMX — mesma lógica, outra apresentação.
 
 ### Anexos
 
 - Até **5 arquivos por prompt**, **1 MB** cada, somente **texto UTF-8**.
-- Extensões aceitas: `.md .markdown .txt .json .yaml .yml .toml .xml .csv .html .htm .css .js .mjs .ts .jsx .tsx .py .ipynb .java .kt .c .h .cpp .hpp .cs .go .rs .rb .php .swift .sql .sh .bash .ps1 .bat .ini .cfg .conf`
+- Extensões aceitas: `.md .txt .json .yaml .yml .toml .xml .csv .html .css .js .ts .jsx .tsx .py .ipynb .java .kt .c .cpp .cs .go .rs .rb .php .swift .sql .sh .bash .ps1 .bat .ini .cfg .conf`
 
 ### Exemplos com curl
 
 ```bash
-# Criar um prompt
-curl -X POST http://localhost:8000/api/prompts \
+# Criar prompt
+curl -X POST https://sua-api.exemplo.com/prompts/api/prompts \
+  -H 'X-API-Key: sua-chave' \
   -H 'Content-Type: application/json' \
-  -d '{"titulo":"Revisor de código","prompt":"Revise o código a seguir...","categoria":"Programação","tags":["código","revisão"]}'
+  -d '{"titulo":"Revisor","prompt":"Revise o código...","categoria":"Programação","tags":["código"]}'
 
-# Anexar arquivos ao prompt 1
-curl -X POST http://localhost:8000/api/prompts/1/arquivos \
+# Anexar arquivos
+curl -X POST https://sua-api.exemplo.com/prompts/api/prompts/1/arquivos \
+  -H 'X-API-Key: sua-chave' \
   -F arquivos=@exemplo.py -F arquivos=@notas.md
 
-# Exportar e importar
-curl http://localhost:8000/api/prompts/export -o backup.json
-curl -X POST http://localhost:8000/api/prompts/import -F arquivo=@backup.json -F modo=mesclar
+# Export / Import
+curl -H 'X-API-Key: sua-chave' \
+  https://sua-api.exemplo.com/prompts/api/prompts/export -o backup.json
 
-# Com API_KEY definida
-curl -H 'X-API-Key: minha-chave' http://localhost:8000/api/prompts
+curl -X POST https://sua-api.exemplo.com/prompts/api/prompts/import \
+  -H 'X-API-Key: sua-chave' \
+  -F arquivo=@backup.json -F modo=mesclar
 ```
 
 ### Formato do JSON de export/import
@@ -116,7 +275,7 @@ curl -H 'X-API-Key: minha-chave' http://localhost:8000/api/prompts
 ```json
 {
   "versao": 1,
-  "exportado_em": "2026-06-12T18:00:00+00:00",
+  "exportado_em": "2026-06-13T17:00:00+00:00",
   "total": 1,
   "prompts": [
     {
@@ -124,7 +283,6 @@ curl -H 'X-API-Key: minha-chave' http://localhost:8000/api/prompts
       "prompt": "Revise o código a seguir...",
       "categoria": "Programação",
       "tags": ["código", "revisão"],
-      "data": "2026-06-12T17:55:00+00:00",
       "fixado": false,
       "arquivos": [{ "nome": "exemplo.py", "conteudo": "print('oi')\n" }]
     }
@@ -133,3 +291,34 @@ curl -H 'X-API-Key: minha-chave' http://localhost:8000/api/prompts
 ```
 
 No import, também é aceita uma lista pura `[ {...}, {...} ]`. Os `id`s são ignorados; a importação é **atômica** (qualquer item inválido cancela tudo).
+
+---
+
+## Resolução de problemas
+
+### CORS: header duplicado
+
+Não adicione `add_header Access-Control-*` no Nginx. O FastAPI já gerencia CORS. Headers duplicados causam falha no browser com a mensagem: *"header contains multiple values"*.
+
+### Nginx serve o frontend em vez da API
+
+Certifique-se de que `DOCS_DIR=` (vazio) está no `.env` do servidor e reinicie o serviço:
+
+```bash
+sudo systemctl restart prompt-master
+```
+
+### Preflight OPTIONS bloqueado (sem CORS headers)
+
+Remova qualquer bloco `if ($request_method = OPTIONS) { return 204; }` do Nginx. O FastAPI (CORSMiddleware) intercepta OPTIONS antes das rotas de autenticação e responde corretamente.
+
+### HTTPS + mixed content
+
+Páginas HTTPS (GitHub Pages) só acessam APIs HTTPS — exceto `http://localhost`. A API no servidor deve estar atrás de HTTPS (Nginx + Let's Encrypt).
+
+### Renovar certificado SSL
+
+```bash
+sudo certbot renew
+sudo systemctl reload nginx
+```
